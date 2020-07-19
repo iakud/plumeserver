@@ -126,5 +126,5 @@ func TestMethodKey(t *testing.T) {
 	}
 
 	data := dataMap[17]
-	t.Logf("TestInterfaceKey: [id=17]: line=%v, level=%v, param=%v\n", data.Line, data.Level, data.Param)
+	t.Logf("TestMethodKey: [id=17]: line=%v, level=%v, param=%v\n", data.Line, data.Level, data.Param)
 }
