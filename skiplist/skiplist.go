@@ -10,7 +10,7 @@ const (
 )
 
 type Interface interface {
-	Less(other interface{}) bool
+	Less(other Interface) bool
 }
 
 type skiplistLevel struct {

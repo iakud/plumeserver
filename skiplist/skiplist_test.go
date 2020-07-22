@@ -8,7 +8,7 @@ import (
 
 type Int int
 
-func (i Int) Less(other interface{}) bool {
+func (i Int) Less(other Interface) bool {
 	return i < other.(Int)
 }
 
