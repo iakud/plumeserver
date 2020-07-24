@@ -147,9 +147,8 @@ func TestRank(t *testing.T) {
 }
 
 func BenchmarkIntInsertOrder(b *testing.B) {
-	b.StopTimer()
 	sl := New()
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		sl.Insert(Int(i))
@@ -157,9 +156,8 @@ func BenchmarkIntInsertOrder(b *testing.B) {
 }
 
 func BenchmarkIntInsertRandom(b *testing.B) {
-	b.StopTimer()
 	sl := New()
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		sl.Insert(Int(rand.Int()))
@@ -167,12 +165,11 @@ func BenchmarkIntInsertRandom(b *testing.B) {
 }
 
 func BenchmarkIntDeleteOrder(b *testing.B) {
-	b.StopTimer()
 	sl := New()
 	for i := 0; i < 1000000; i++ {
 		sl.Insert(Int(i))
 	}
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		sl.Delete(Int(i))
@@ -180,12 +177,11 @@ func BenchmarkIntDeleteOrder(b *testing.B) {
 }
 
 func BenchmarkIntDeleteRandome(b *testing.B) {
-	b.StopTimer()
 	sl := New()
 	for i := 0; i < 1000000; i++ {
 		sl.Insert(Int(rand.Int()))
 	}
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		sl.Delete(Int(rand.Int()))
@@ -193,12 +189,11 @@ func BenchmarkIntDeleteRandome(b *testing.B) {
 }
 
 func BenchmarkIntRankOrder(b *testing.B) {
-	b.StopTimer()
 	sl := New()
 	for i := 0; i < 1000000; i++ {
 		sl.Insert(Int(i))
 	}
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		sl.GetRank(Int(i))
@@ -206,12 +201,11 @@ func BenchmarkIntRankOrder(b *testing.B) {
 }
 
 func BenchmarkIntRankRandom(b *testing.B) {
-	b.StopTimer()
 	sl := New()
 	for i := 0; i < 1000000; i++ {
 		sl.Insert(Int(rand.Int()))
 	}
-	b.StartTimer()
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		sl.GetRank(Int(rand.Int()))
