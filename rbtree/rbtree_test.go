@@ -39,7 +39,7 @@ func BenchmarkIntDeleteOrder(b *testing.B) {
 	}
 }
 
-func BenchmarkIntDeleteRandome(b *testing.B) {
+func BenchmarkIntDeleteRandom(b *testing.B) {
 	t := New()
 	for i := 0; i < 1000000; i++ {
 		t.Insert(Int(rand.Int()))
