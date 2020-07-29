@@ -3,15 +3,15 @@ package rbtree
 type color uint8
 
 const (
-	RED   color = 0
-	BLACK color = 1
+	kRed   color = 0
+	kBlack color = 1
 )
 
 type Node struct {
 	Left   *Node
 	Right  *Node
 	Parent *Node
-	Color  color
+	color  color
 
 	Item
 }
@@ -27,7 +27,7 @@ type Rbtree struct {
 }
 
 func New() *Rbtree {
-	node := &Node{Color: BLACK}
+	node := &Node{color: kBlack}
 	return &Rbtree{
 		NIL:   node,
 		root:  node,
@@ -118,7 +118,7 @@ func (t *Rbtree) insert(item Item) {
 			return
 		}
 	}
-	z := &Node{t.NIL, t.NIL, y, RED, item}
+	z := &Node{t.NIL, t.NIL, y, kRed, item}
 	if y == t.NIL {
 		t.root = z
 	} else if item.Less(y.Item) {
@@ -132,42 +132,42 @@ func (t *Rbtree) insert(item Item) {
 }
 
 func (t *Rbtree) insertFixup(z *Node) {
-	for z.Parent.Color == RED {
+	for z.Parent.color == kRed {
 		if z.Parent == z.Parent.Parent.Left {
 			y := z.Parent.Parent.Right
-			if y.Color == RED {
-				z.Parent.Color = BLACK
-				y.Color = BLACK
-				z.Parent.Parent.Color = RED
+			if y.color == kRed {
+				z.Parent.color = kBlack
+				y.color = kBlack
+				z.Parent.Parent.color = kRed
 				z = z.Parent.Parent
 			} else {
 				if z == z.Parent.Right {
 					z = z.Parent
 					t.leftRotate(z)
 				}
-				z.Parent.Color = BLACK
-				z.Parent.Parent.Color = RED
+				z.Parent.color = kBlack
+				z.Parent.Parent.color = kRed
 				t.rightRotate(z.Parent.Parent)
 			}
 		} else {
 			y := z.Parent.Parent.Left
-			if y.Color == RED {
-				z.Parent.Color = BLACK
-				y.Color = BLACK
-				z.Parent.Parent.Color = RED
+			if y.color == kRed {
+				z.Parent.color = kBlack
+				y.color = kBlack
+				z.Parent.Parent.color = kRed
 				z = z.Parent.Parent
 			} else {
 				if z == z.Parent.Left {
 					z = z.Parent
 					t.rightRotate(z)
 				}
-				z.Parent.Color = BLACK
-				z.Parent.Parent.Color = RED
+				z.Parent.color = kBlack
+				z.Parent.Parent.color = kRed
 				t.leftRotate(z.Parent.Parent)
 			}
 		}
 	}
-	t.root.Color = BLACK
+	t.root.color = kBlack
 }
 
 func (t *Rbtree) Delete(item Item) {
@@ -211,7 +211,7 @@ func (t *Rbtree) delete(item Item) {
 		z.Item = y.Item
 	}
 
-	if y.Color == BLACK {
+	if y.color == kBlack {
 		t.deleteFixup(x)
 	}
 
@@ -219,58 +219,58 @@ func (t *Rbtree) delete(item Item) {
 }
 
 func (t *Rbtree) deleteFixup(x *Node) {
-	for x != t.root && x.Color == BLACK {
+	for x != t.root && x.color == kBlack {
 		if x == x.Parent.Left {
 			w := x.Parent.Right
-			if w.Color == RED {
-				w.Color = BLACK
-				x.Parent.Color = RED
+			if w.color == kRed {
+				w.color = kBlack
+				x.Parent.color = kRed
 				t.leftRotate(x.Parent)
 				w = x.Parent.Right
 			}
-			if w.Left.Color == BLACK && w.Right.Color == BLACK {
-				w.Color = RED
+			if w.Left.color == kBlack && w.Right.color == kBlack {
+				w.color = kRed
 				x = x.Parent
 			} else {
-				if w.Right.Color == BLACK {
-					w.Left.Color = BLACK
-					w.Color = RED
+				if w.Right.color == kBlack {
+					w.Left.color = kBlack
+					w.color = kRed
 					t.rightRotate(w)
 					w = x.Parent.Right
 				}
-				w.Color = x.Parent.Color
-				x.Parent.Color = BLACK
-				w.Right.Color = BLACK
+				w.color = x.Parent.color
+				x.Parent.color = kBlack
+				w.Right.color = kBlack
 				t.leftRotate(x.Parent)
 				x = t.root
 			}
 		} else {
 			w := x.Parent.Left
-			if w.Color == RED {
-				w.Color = BLACK
-				x.Parent.Color = RED
+			if w.color == kRed {
+				w.color = kBlack
+				x.Parent.color = kRed
 				t.rightRotate(x.Parent)
 				w = x.Parent.Left
 			}
-			if w.Left.Color == BLACK && w.Right.Color == BLACK {
-				w.Color = RED
+			if w.Left.color == kBlack && w.Right.color == kBlack {
+				w.color = kRed
 				x = x.Parent
 			} else {
-				if w.Left.Color == BLACK {
-					w.Right.Color = BLACK
-					w.Color = RED
+				if w.Left.color == kBlack {
+					w.Right.color = kBlack
+					w.color = kRed
 					t.leftRotate(w)
 					w = x.Parent.Left
 				}
-				w.Color = x.Parent.Color
-				x.Parent.Color = BLACK
-				w.Left.Color = BLACK
+				w.color = x.Parent.color
+				x.Parent.color = kBlack
+				w.Left.color = kBlack
 				t.rightRotate(x.Parent)
 				x = t.root
 			}
 		}
 	}
-	x.Color = BLACK
+	x.color = kBlack
 }
 
 func (t *Rbtree) successor(x *Node) *Node {
