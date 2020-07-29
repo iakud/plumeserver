@@ -35,52 +35,73 @@ func New() *Rbtree {
 	}
 }
 
-func (t *Rbtree) leftRotate(x *Node) {
-	if x.Right == t.NIL {
-		return
-	}
-
-	y := x.Right
-	x.Right = y.Left
-	if y.Left != t.NIL {
-		y.Left.Parent = x
-	}
-	y.Parent = x.Parent
-
-	if x.Parent == t.NIL {
-		t.root = y
-	} else if x == x.Parent.Left {
-		x.Parent.Left = y
-	} else {
-		x.Parent.Right = y
-	}
-
-	y.Left = x
-	x.Parent = y
+func (t *Rbtree) Len() uint {
+	return t.count
 }
 
-func (t *Rbtree) rightRotate(x *Node) {
-	if x.Left == t.NIL {
+func (t *Rbtree) Min() Item {
+	if x := t.min(t.root); x == t.NIL {
+		return x.Item
+	}
+	return nil
+}
+
+func (t *Rbtree) min(x *Node) *Node {
+	if x == t.NIL {
+		return t.NIL
+	}
+	for x.Left != t.NIL {
+		x = x.Left
+	}
+	return x
+}
+
+func (t *Rbtree) Max() Item {
+	if x := t.max(t.root); x != t.NIL {
+		return x.Item
+	}
+	return nil
+}
+
+func (t *Rbtree) max(x *Node) *Node {
+	if x == t.NIL {
+		return t.NIL
+	}
+	for x.Right != t.NIL {
+		x = x.Right
+	}
+	return x
+}
+
+func (t *Rbtree) Get(item Item) Item {
+	if item == nil {
+		return nil
+	}
+	if x := t.search(item); x != t.NIL {
+		return x.Item
+	}
+	return nil
+}
+
+func (t *Rbtree) search(item Item) *Node {
+	p := t.root
+	for p != t.NIL {
+		if p.Item.Less(item) {
+			p = p.Right
+		} else if item.Less(p.Item) {
+			p = p.Left
+		} else {
+			break
+		}
+	}
+	return p
+}
+
+func (t *Rbtree) Insert(item Item) {
+	if item == nil {
 		return
 	}
-
-	y := x.Left
-	x.Left = y.Right
-	if y.Right != t.NIL {
-		y.Right.Parent = x
-	}
-	y.Parent = x.Parent
-
-	if x.Parent == t.NIL {
-		t.root = y
-	} else if x == x.Parent.Left {
-		x.Parent.Left = y
-	} else {
-		x.Parent.Right = y
-	}
-
-	y.Right = x
-	x.Parent = y
+	t.insert(item)
 }
 
 func (t *Rbtree) insert(item Item) {
@@ -149,61 +170,11 @@ func (t *Rbtree) insertFixup(z *Node) {
 	t.root.Color = BLACK
 }
 
-func (t *Rbtree) min(x *Node) *Node {
-	if x == t.NIL {
-		return t.NIL
+func (t *Rbtree) Delete(item Item) {
+	if item == nil {
+		return
 	}
-
-	for x.Left != t.NIL {
-		x = x.Left
-	}
-
-	return x
-}
-
-func (t *Rbtree) max(x *Node) *Node {
-	if x == t.NIL {
-		return t.NIL
-	}
-
-	for x.Right != t.NIL {
-		x = x.Right
-	}
-
-	return x
-}
-
-func (t *Rbtree) search(item Item) *Node {
-	p := t.root
-
-	for p != t.NIL {
-		if p.Item.Less(item) {
-			p = p.Right
-		} else if item.Less(p.Item) {
-			p = p.Left
-		} else {
-			break
-		}
-	}
-
-	return p
-}
-
-func (t *Rbtree) successor(x *Node) *Node {
-	if x == t.NIL {
-		return t.NIL
-	}
-
-	if x.Right != t.NIL {
-		return t.min(x.Right)
-	}
-
-	y := x.Parent
-	for y != t.NIL && x == y.Right {
-		x = y
-		y = y.Parent
-	}
-	return y
+	t.delete(item)
 }
 
 func (t *Rbtree) delete(item Item) {
@@ -302,51 +273,67 @@ func (t *Rbtree) deleteFixup(x *Node) {
 	x.Color = BLACK
 }
 
-func (t *Rbtree) Len() uint { return t.count }
+func (t *Rbtree) successor(x *Node) *Node {
+	if x == t.NIL {
+		return t.NIL
+	}
 
-func (t *Rbtree) Insert(item Item) {
-	if item == nil {
+	if x.Right != t.NIL {
+		return t.min(x.Right)
+	}
+
+	y := x.Parent
+	for y != t.NIL && x == y.Right {
+		x = y
+		y = y.Parent
+	}
+	return y
+}
+
+func (t *Rbtree) leftRotate(x *Node) {
+	if x.Right == t.NIL {
 		return
 	}
-	t.insert(item)
+
+	y := x.Right
+	x.Right = y.Left
+	if y.Left != t.NIL {
+		y.Left.Parent = x
+	}
+	y.Parent = x.Parent
+
+	if x.Parent == t.NIL {
+		t.root = y
+	} else if x == x.Parent.Left {
+		x.Parent.Left = y
+	} else {
+		x.Parent.Right = y
+	}
+
+	y.Left = x
+	x.Parent = y
 }
 
-func (t *Rbtree) Delete(item Item) {
-	if item == nil {
+func (t *Rbtree) rightRotate(x *Node) {
+	if x.Left == t.NIL {
 		return
 	}
-	t.delete(item)
-}
 
-func (t *Rbtree) Get(item Item) Item {
-	if item == nil {
-		return nil
+	y := x.Left
+	x.Left = y.Right
+	if y.Right != t.NIL {
+		y.Right.Parent = x
+	}
+	y.Parent = x.Parent
+
+	if x.Parent == t.NIL {
+		t.root = y
+	} else if x == x.Parent.Left {
+		x.Parent.Left = y
+	} else {
+		x.Parent.Right = y
 	}
 
-	ret := t.search(item)
-	if ret == nil {
-		return nil
-	}
-
-	return ret.Item
-}
-
-func (t *Rbtree) Min() Item {
-	x := t.min(t.root)
-
-	if x == t.NIL {
-		return nil
-	}
-
-	return x.Item
-}
-
-func (t *Rbtree) Max() Item {
-	x := t.max(t.root)
-
-	if x == t.NIL {
-		return nil
-	}
-
-	return x.Item
+	y.Right = x
+	x.Parent = y
 }
