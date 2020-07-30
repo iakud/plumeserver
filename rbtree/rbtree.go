@@ -21,16 +21,13 @@ type Item interface {
 }
 
 type Rbtree struct {
-	NIL   *Node
 	root  *Node
 	count uint
 }
 
 func New() *Rbtree {
-	node := &Node{color: kBlack}
 	return &Rbtree{
-		NIL:   node,
-		root:  node,
+		root:  nil,
 		count: 0,
 	}
 }
@@ -40,34 +37,34 @@ func (t *Rbtree) Len() uint {
 }
 
 func (t *Rbtree) Min() Item {
-	if x := t.min(t.root); x == t.NIL {
+	if x := t.min(t.root); x == nil {
 		return x.Item
 	}
 	return nil
 }
 
 func (t *Rbtree) min(x *Node) *Node {
-	if x == t.NIL {
-		return t.NIL
+	if x == nil {
+		return nil
 	}
-	for x.left != t.NIL {
+	for x.left != nil {
 		x = x.left
 	}
 	return x
 }
 
 func (t *Rbtree) Max() Item {
-	if x := t.max(t.root); x != t.NIL {
+	if x := t.max(t.root); x != nil {
 		return x.Item
 	}
 	return nil
 }
 
 func (t *Rbtree) max(x *Node) *Node {
-	if x == t.NIL {
-		return t.NIL
+	if x == nil {
+		return nil
 	}
-	for x.right != t.NIL {
+	for x.right != nil {
 		x = x.right
 	}
 	return x
@@ -77,7 +74,7 @@ func (t *Rbtree) Get(item Item) Item {
 	if item == nil {
 		return nil
 	}
-	if x := t.search(item); x != t.NIL {
+	if x := t.search(item); x != nil {
 		return x.Item
 	}
 	return nil
@@ -85,7 +82,7 @@ func (t *Rbtree) Get(item Item) Item {
 
 func (t *Rbtree) search(item Item) *Node {
 	p := t.root
-	for p != t.NIL {
+	for p != nil {
 		if p.Item.Less(item) {
 			p = p.right
 		} else if item.Less(p.Item) {
@@ -101,14 +98,11 @@ func (t *Rbtree) Insert(item Item) {
 	if item == nil {
 		return
 	}
-	t.insert(item)
-}
 
-func (t *Rbtree) insert(item Item) {
 	x := t.root
-	y := t.NIL
+	var y *Node
 
-	for x != t.NIL {
+	for x != nil {
 		y = x
 		if item.Less(x.Item) {
 			x = x.left
@@ -118,52 +112,52 @@ func (t *Rbtree) insert(item Item) {
 			return
 		}
 	}
-	z := &Node{t.NIL, t.NIL, y, kRed, item}
-	if y == t.NIL {
-		t.root = z
+	x = &Node{nil, nil, y, kRed, item}
+	if y == nil {
+		t.root = x
 	} else if item.Less(y.Item) {
-		y.left = z
+		y.left = x
 	} else {
-		y.right = z
+		y.right = x
 	}
 
 	t.count++
-	t.insertFixup(z)
+	t.insertFixup(x)
 }
 
-func (t *Rbtree) insertFixup(z *Node) {
-	for z.parent.color == kRed {
-		if z.parent == z.parent.parent.left {
-			y := z.parent.parent.right
-			if y.color == kRed {
-				z.parent.color = kBlack
+func (t *Rbtree) insertFixup(x *Node) {
+	for x != t.root && x.parent.color == kRed {
+		if x.parent == x.parent.parent.left {
+			y := x.parent.parent.right
+			if y != nil && y.color == kRed {
+				x.parent.color = kBlack
 				y.color = kBlack
-				z.parent.parent.color = kRed
-				z = z.parent.parent
+				x.parent.parent.color = kRed
+				x = x.parent.parent
 			} else {
-				if z == z.parent.right {
-					z = z.parent
-					t.leftRotate(z)
+				if x == x.parent.right {
+					x = x.parent
+					t.leftRotate(x)
 				}
-				z.parent.color = kBlack
-				z.parent.parent.color = kRed
-				t.rightRotate(z.parent.parent)
+				x.parent.color = kBlack
+				x.parent.parent.color = kRed
+				t.rightRotate(x.parent.parent)
 			}
 		} else {
-			y := z.parent.parent.left
-			if y.color == kRed {
-				z.parent.color = kBlack
+			y := x.parent.parent.left
+			if y != nil && y.color == kRed {
+				x.parent.color = kBlack
 				y.color = kBlack
-				z.parent.parent.color = kRed
-				z = z.parent.parent
+				x.parent.parent.color = kRed
+				x = x.parent.parent
 			} else {
-				if z == z.parent.left {
-					z = z.parent
-					t.rightRotate(z)
+				if x == x.parent.left {
+					x = x.parent
+					t.rightRotate(x)
 				}
-				z.parent.color = kBlack
-				z.parent.parent.color = kRed
-				t.leftRotate(z.parent.parent)
+				x.parent.color = kBlack
+				x.parent.parent.color = kRed
+				t.leftRotate(x.parent.parent)
 			}
 		}
 	}
@@ -174,32 +168,31 @@ func (t *Rbtree) Delete(item Item) {
 	if item == nil {
 		return
 	}
-	t.delete(item)
-}
 
-func (t *Rbtree) delete(item Item) {
 	z := t.search(item)
 
-	if z == t.NIL {
+	if z == nil {
 		return
 	}
 
 	var x, y *Node
-	if z.left == t.NIL || z.right == t.NIL {
+	if z.left == nil || z.right == nil {
 		y = z
 	} else {
 		y = t.successor(z)
 	}
 
-	if y.left != t.NIL {
+	if y.left != nil {
 		x = y.left
 	} else {
 		x = y.right
 	}
 
-	x.parent = y.parent
+	if x != nil {
+		x.parent = y.parent
+	}
 
-	if y.parent == t.NIL {
+	if y.parent == nil {
 		t.root = x
 	} else if y == y.parent.left {
 		y.parent.left = x
@@ -212,78 +205,79 @@ func (t *Rbtree) delete(item Item) {
 	}
 
 	if y.color == kBlack {
-		t.deleteFixup(x)
+		t.deleteFixup(x, y.parent)
 	}
-
 	t.count--
 }
 
-func (t *Rbtree) deleteFixup(x *Node) {
-	for x != t.root && x.color == kBlack {
-		if x == x.parent.left {
-			w := x.parent.right
+func (t *Rbtree) deleteFixup(x, parent *Node) {
+	for x != t.root && (x == nil || x.color == kBlack) {
+		if x == parent.left {
+			w := parent.right
 			if w.color == kRed {
 				w.color = kBlack
-				x.parent.color = kRed
-				t.leftRotate(x.parent)
-				w = x.parent.right
+				parent.color = kRed
+				t.leftRotate(parent)
+				w = parent.right
 			}
-			if w.left.color == kBlack && w.right.color == kBlack {
+			if (w.left == nil || w.left.color == kBlack) && (w.right == nil || w.right.color == kBlack) {
 				w.color = kRed
-				x = x.parent
+				x = parent
+				parent = x.parent
 			} else {
-				if w.right.color == kBlack {
+				if w.right == nil || w.right.color == kBlack {
 					w.left.color = kBlack
 					w.color = kRed
 					t.rightRotate(w)
-					w = x.parent.right
+					w = parent.right
 				}
-				w.color = x.parent.color
-				x.parent.color = kBlack
+				w.color = parent.color
+				parent.color = kBlack
 				w.right.color = kBlack
-				t.leftRotate(x.parent)
+				t.leftRotate(parent)
 				x = t.root
 			}
 		} else {
-			w := x.parent.left
-			if w.color == kRed {
+			w := parent.left
+			if w != nil && w.color == kRed {
 				w.color = kBlack
-				x.parent.color = kRed
-				t.rightRotate(x.parent)
-				w = x.parent.left
+				parent.color = kRed
+				t.rightRotate(parent)
+				w = parent.left
 			}
-			if w.left.color == kBlack && w.right.color == kBlack {
+			if (w.left == nil || w.left.color == kBlack) && (w.right == nil || w.right.color == kBlack) {
 				w.color = kRed
-				x = x.parent
+				x = parent
+				parent = x.parent
 			} else {
-				if w.left.color == kBlack {
+				if w.left == nil || w.left.color == kBlack {
 					w.right.color = kBlack
 					w.color = kRed
 					t.leftRotate(w)
-					w = x.parent.left
+					w = parent.left
 				}
-				w.color = x.parent.color
-				x.parent.color = kBlack
+				w.color = parent.color
+				parent.color = kBlack
 				w.left.color = kBlack
-				t.rightRotate(x.parent)
+				t.rightRotate(parent)
 				x = t.root
 			}
 		}
 	}
-	x.color = kBlack
+	if x != nil {
+		x.color = kBlack
+	}
 }
 
 func (t *Rbtree) successor(x *Node) *Node {
-	if x == t.NIL {
-		return t.NIL
+	if x == nil {
+		return nil
 	}
-
-	if x.right != t.NIL {
+	if x.right != nil {
 		return t.min(x.right)
 	}
-
 	y := x.parent
-	for y != t.NIL && x == y.right {
+	for y != nil && x == y.right {
 		x = y
 		y = y.parent
 	}
@@ -291,18 +285,18 @@ func (t *Rbtree) successor(x *Node) *Node {
 }
 
 func (t *Rbtree) leftRotate(x *Node) {
-	if x.right == t.NIL {
+	if x.right == nil {
 		return
 	}
 
 	y := x.right
 	x.right = y.left
-	if y.left != t.NIL {
+	if y.left != nil {
 		y.left.parent = x
 	}
 	y.parent = x.parent
 
-	if x.parent == t.NIL {
+	if x.parent == nil {
 		t.root = y
 	} else if x == x.parent.left {
 		x.parent.left = y
@@ -315,18 +309,18 @@ func (t *Rbtree) leftRotate(x *Node) {
 }
 
 func (t *Rbtree) rightRotate(x *Node) {
-	if x.left == t.NIL {
+	if x.left == nil {
 		return
 	}
 
 	y := x.left
 	x.left = y.right
-	if y.right != t.NIL {
+	if y.right != nil {
 		y.right.parent = x
 	}
 	y.parent = x.parent
 
-	if x.parent == t.NIL {
+	if x.parent == nil {
 		t.root = y
 	} else if x == x.parent.left {
 		x.parent.left = y

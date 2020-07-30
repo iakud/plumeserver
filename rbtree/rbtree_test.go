@@ -33,7 +33,6 @@ func BenchmarkIntDeleteOrder(b *testing.B) {
 		t.Insert(Int(i))
 	}
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
 		t.Delete(Int(i))
 	}
@@ -45,7 +44,6 @@ func BenchmarkIntDeleteRandom(b *testing.B) {
 		t.Insert(Int(rand.Int()))
 	}
 	b.ResetTimer()
-
 	for i := 0; i < b.N; i++ {
 		t.Delete(Int(rand.Int()))
 	}
