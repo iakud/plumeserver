@@ -1,3 +1,7 @@
 github.com/gocarina/gocsv v0.0.0-20200827134620-49f5c3fa2b3e/go.mod h1:5YoVOkjYAQumqlV356Hj3xeYh4BdZuLE0/nRkf2NKkI=
 github.com/iakud/plume v0.0.0-20210330081517-b33608706bf7 h1:zZNhJuBjriQEPYniDOHGDN+IOCVhv8k95w/qtBjwOeI=
 github.com/iakud/plume v0.0.0-20210330081517-b33608706bf7/go.mod h1:pjmkdS+Y9MPZ52Ple3HKtF5YZVcw91GahOdV7S6K7Zk=
+github.com/iakud/plume v0.0.0-20210402085031-2b8d7899b651 h1:z1nKzEeBOigcICBWY9xbeqPl9QuC+BRmYNfk2tioios=
+github.com/iakud/plume v0.0.0-20210402085031-2b8d7899b651/go.mod h1:pjmkdS+Y9MPZ52Ple3HKtF5YZVcw91GahOdV7S6K7Zk=
+github.com/iakud/plume v0.0.0-20210402090916-d1bbe975a6a2 h1:2i4D+wTL3EO4Od6YzAF8OiteUmmP9KJVpvVGtqwHhUw=
+github.com/iakud/plume v0.0.0-20210402090916-d1bbe975a6a2/go.mod h1:pjmkdS+Y9MPZ52Ple3HKtF5YZVcw91GahOdV7S6K7Zk=
