@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iakud/starry/service/pb"
+	"github.com/iakud/plumeserver/service/pb"
 
 	"github.com/golang/protobuf/proto"
 )

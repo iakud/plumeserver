@@ -1,3 +1,8 @@
 module github.com/iakud/plumeserver
 
-require github.com/iakud/plume v0.0.0-20210402090916-d1bbe975a6a2
+go 1.16
+
+require (
+	github.com/golang/protobuf v1.5.2
+	github.com/iakud/plume v0.0.0-20210816111312-5fb64c1e8586
+)

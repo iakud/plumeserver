@@ -19,7 +19,7 @@ func (game *GameApp) Run(ctx context.Context) {
 	<-ctx.Done()
 }
 
-func (game *GameApp) Destory() {
+func (game *GameApp) Shutdown() {
 
 }
 
