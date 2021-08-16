@@ -11,7 +11,7 @@ type GameApp struct {
 }
 
 func (game *GameApp) Init() {
-
+	log.Info("game init")
 }
 
 func (game *GameApp) Run(ctx context.Context) {
@@ -20,7 +20,7 @@ func (game *GameApp) Run(ctx context.Context) {
 }
 
 func (game *GameApp) Shutdown() {
-
+	log.Info("game shutdown")
 }
 
 func main() {
