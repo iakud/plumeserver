@@ -24,5 +24,6 @@ func (game *GameApp) Shutdown() {
 }
 
 func main() {
-	plume.Run(&GameApp{})
+	services := plume.WithServices(&GameApp{})
+	plume.Run(services)
 }
