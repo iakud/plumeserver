@@ -1,6 +1,8 @@
 package astar
 
-import "container/heap"
+import (
+	"container/heap"
+)
 
 type Graph[Node any] interface {
 	Neighbours(n Node) []Node
@@ -32,7 +34,8 @@ func (p Path[Node]) Cost(d CostFunc[Node]) (c float64) {
 }
 
 func FindPath[Node comparable](g Graph[Node], start, dest Node, d, h CostFunc[Node]) Path[Node] {
-	closed := make(map[Node]bool)
+	closeList := make(map[Node]struct{})
+	openList := make(map[Node]*item[Path[Node]])
 
 	var pq priorityQueue[Path[Node]]
 	heap.Init(&pq)
@@ -41,21 +44,32 @@ func FindPath[Node comparable](g Graph[Node], start, dest Node, d, h CostFunc[No
 	for pq.Len() > 0 {
 		p := heap.Pop(&pq).(*item[Path[Node]]).value
 		n := p.last()
-		if closed[n] {
-			continue
-		}
 		if n == dest {
 			// Path found
 			return p
 		}
-		closed[n] = true
+		delete(openList, n)
+		closeList[n] = struct{}{}
 
 		for _, nb := range g.Neighbours(n) {
+			if _, ok := closeList[nb]; ok {
+				continue
+			}
 			cp := p.cont(nb)
-			heap.Push(&pq, &item[Path[Node]]{
-				value:    cp,
-				priority: cp.Cost(d) + h(nb, dest),
-			})
+			priority := cp.Cost(d) + h(nb, dest)
+			itemNode, ok := openList[nb]
+			if !ok {
+				itemNode = &item[Path[Node]]{value: cp, priority: priority}
+				openList[nb] = itemNode
+				heap.Push(&pq, itemNode)
+				continue
+			}
+			if itemNode.priority <= priority {
+				continue
+			}
+			itemNode.value = cp
+			itemNode.priority = priority
+			heap.Fix(&pq, itemNode.index)
 		}
 	}
 

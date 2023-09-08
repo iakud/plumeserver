@@ -3,6 +3,7 @@ package astar
 type item[T any] struct {
 	value    T
 	priority float64
+	index    int
 }
 
 type priorityQueue[T any] []*item[T]
@@ -15,6 +16,7 @@ func (pq priorityQueue[T]) Less(i, j int) bool {
 
 func (pq priorityQueue[T]) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
+	pq[i].index, pq[j].index = i, j
 }
 
 func (pq *priorityQueue[T]) Push(x any) {
