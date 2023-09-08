@@ -33,20 +33,29 @@ func (p Path[Node]) Cost(d CostFunc[Node]) (c float64) {
 	return c
 }
 
-func FindPath[Node comparable](g Graph[Node], start, dest Node, d, h CostFunc[Node]) Path[Node] {
+func FindPath[Node comparable](g Graph[Node], start, dest Node, d, h CostFunc[Node]) []Node {
 	closeList := make(map[Node]struct{})
-	openList := make(map[Node]*item[Path[Node]])
+	openList := make(map[Node]*item[Node])
 
-	var pq priorityQueue[Path[Node]]
+	var pq priorityQueue[Node]
 	heap.Init(&pq)
-	heap.Push(&pq, &item[Path[Node]]{value: newPath(start)})
+	heap.Push(&pq, &item[Node]{value: start})
 
 	for pq.Len() > 0 {
-		p := heap.Pop(&pq).(*item[Path[Node]]).value
-		n := p.last()
+		node := heap.Pop(&pq).(*item[Node])
+		n := node.value
 		if n == dest {
 			// Path found
-			return p
+			path := make([]Node, 0)
+			for node != nil {
+				path = append(path, node.value)
+				node = node.from
+			}
+			for i := 0; i < len(path); i++ {
+				j := len(path) - i - 1
+				path[i], path[j] = path[j], path[i]
+			}
+			return path
 		}
 		delete(openList, n)
 		closeList[n] = struct{}{}
@@ -55,20 +64,20 @@ func FindPath[Node comparable](g Graph[Node], start, dest Node, d, h CostFunc[No
 			if _, ok := closeList[nb]; ok {
 				continue
 			}
-			cp := p.cont(nb)
-			priority := cp.Cost(d) + h(nb, dest)
+			gScore := d(n, nb) + node.gScore
 			itemNode, ok := openList[nb]
 			if !ok {
-				itemNode = &item[Path[Node]]{value: cp, priority: priority}
+				itemNode = &item[Node]{value: nb, from: node, gScore: gScore, fScore: gScore + h(nb, dest)}
 				openList[nb] = itemNode
 				heap.Push(&pq, itemNode)
 				continue
 			}
-			if itemNode.priority <= priority {
+			if itemNode.gScore <= gScore {
 				continue
 			}
-			itemNode.value = cp
-			itemNode.priority = priority
+			itemNode.from = node
+			itemNode.gScore = gScore
+			itemNode.fScore = gScore + h(nb, dest)
 			heap.Fix(&pq, itemNode.index)
 		}
 	}
