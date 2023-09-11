@@ -2,7 +2,7 @@ package astar
 
 type item[T any] struct {
 	value  T
-	from   *item[T]
+	link   *item[T]
 	gScore float64
 	fScore float64
 	index  int
@@ -22,7 +22,9 @@ func (pq priorityQueue[T]) Swap(i, j int) {
 }
 
 func (pq *priorityQueue[T]) Push(x any) {
-	*pq = append(*pq, x.(*item[T]))
+	it := x.(*item[T])
+	it.index = len(*pq)
+	*pq = append(*pq, it)
 }
 
 func (pq *priorityQueue[T]) Pop() any {
@@ -31,18 +33,4 @@ func (pq *priorityQueue[T]) Pop() any {
 	it := old[n-1]
 	*pq = old[0 : n-1]
 	return it
-}
-
-type queue[Node comparable] struct {
-	nodes         map[Node]*item[Node]
-	priorityQueue []*item[Node]
-}
-
-func newQueue[Node comparable]() *queue[Node] {
-	return &queue[Node]{nodes: make(map[Node]*item[Node])}
-}
-
-func (q *queue[Node]) Push(node Node) {
-	// nodes
-	// heap.Push(&q.priorityQueue, &item[Node]{value: node})
 }
