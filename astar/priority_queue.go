@@ -1,11 +1,12 @@
 package astar
 
 type item[T any] struct {
-	value  T
-	link   *item[T]
-	gScore float64
-	fScore float64
-	index  int
+	node     T
+	from     *item[T]
+	cost     float64 // G
+	priority float64 // F (F = G + H)
+	closed   bool
+	index    int
 }
 
 type priorityQueue[T any] []*item[T]
@@ -13,7 +14,7 @@ type priorityQueue[T any] []*item[T]
 func (pq priorityQueue[T]) Len() int { return len(pq) }
 
 func (pq priorityQueue[T]) Less(i, j int) bool {
-	return pq[i].fScore < pq[j].fScore
+	return pq[i].priority < pq[j].priority
 }
 
 func (pq priorityQueue[T]) Swap(i, j int) {
