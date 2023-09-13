@@ -29,6 +29,7 @@ func FindPath[Node comparable](g Graph[Node], start, end Node, d, h CostFunc[Nod
 			return paths(current)
 		}
 
+		delete(openList, current.node)
 		closeList[current.node] = struct{}{}
 
 		for _, neighbour := range g.Neighbours(current.node) {
