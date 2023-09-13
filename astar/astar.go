@@ -11,56 +11,57 @@ type Graph[Node any] interface {
 type CostFunc[Node any] func(a, b Node) float64
 
 func FindPath[Node comparable](g Graph[Node], start, end Node, d, h CostFunc[Node]) []Node {
-	nodeList := make(map[Node]*item[Node])
+	closeList := make(map[Node]struct{})
+	openList := make(map[Node]*item[Node])
 
 	var pq priorityQueue[Node]
 	heap.Init(&pq)
-	// start item
-	startItem := &item[Node]{node: start}
-	nodeList[start] = startItem
-	heap.Push(&pq, startItem)
+	// start
+	from := &item[Node]{node: start}
+	openList[start] = from
+	heap.Push(&pq, from)
 
 	for pq.Len() > 0 {
-		currentItem := heap.Pop(&pq).(*item[Node])
+		current := heap.Pop(&pq).(*item[Node])
 
-		if currentItem.node == end {
+		if current.node == end {
 			// Path found
-			return paths(currentItem)
+			return paths(current)
 		}
 
-		currentItem.closed = true // close
+		closeList[current.node] = struct{}{}
 
-		for _, neighbour := range g.Neighbours(currentItem.node) {
-			neighbourItem, ok := nodeList[neighbour]
+		for _, neighbour := range g.Neighbours(current.node) {
+			if _, ok := closeList[neighbour]; ok {
+				continue
+			}
+
+			cost := d(current.node, neighbour) + current.cost
+			next, ok := openList[neighbour]
 			if !ok {
-				// new item
-				cost := d(currentItem.node, neighbour) + currentItem.cost
-				neighbourItem = &item[Node]{node: neighbour, from: currentItem, cost: cost, priority: cost + h(neighbour, end)}
-				nodeList[neighbour] = neighbourItem
-				heap.Push(&pq, neighbourItem)
+				// add
+				next = &item[Node]{node: neighbour, from: current, cost: cost, priority: cost + h(neighbour, end)}
+				openList[neighbour] = next
+				heap.Push(&pq, next)
 				continue
 			}
-			if neighbourItem.closed {
+			// update
+			if next.cost <= cost {
 				continue
 			}
-			// update item
-			cost := d(currentItem.node, neighbour) + currentItem.cost
-			if neighbourItem.cost <= cost {
-				continue
-			}
-			neighbourItem.from = currentItem
-			neighbourItem.cost = cost
-			neighbourItem.priority = cost + h(neighbour, end)
-			heap.Fix(&pq, neighbourItem.index)
+			next.from = current
+			next.cost = cost
+			next.priority = cost + h(neighbour, end)
+			heap.Fix(&pq, next.index)
 		}
 	}
 	// No path found
 	return nil
 }
 
-func paths[Node any](endItem *item[Node]) []Node {
+func paths[Node any](current *item[Node]) []Node {
 	nodes := make([]Node, 0)
-	for from := endItem; from != nil; from = from.from {
+	for from := current; from != nil; from = from.from {
 		nodes = append(nodes, from.node)
 	}
 	for i := 0; i < len(nodes); i++ {

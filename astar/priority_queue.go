@@ -5,7 +5,6 @@ type item[T any] struct {
 	from     *item[T]
 	cost     float64 // G
 	priority float64 // F (F = G + H)
-	closed   bool
 	index    int
 }
 
