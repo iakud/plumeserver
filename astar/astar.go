@@ -41,7 +41,12 @@ func FindPath[Node comparable](g Graph[Node], start, end Node, d, h CostFunc[Nod
 			next, ok := openList[neighbour]
 			if !ok {
 				// add
-				next = &item[Node]{node: neighbour, from: current, cost: cost, priority: cost + h(neighbour, end)}
+				next = &item[Node]{
+					node:     neighbour,
+					from:     current,
+					cost:     cost,
+					priority: cost + h(neighbour, end),
+				}
 				openList[neighbour] = next
 				heap.Push(&pq, next)
 				continue
