@@ -81,45 +81,30 @@ type JumpPointDefine struct {
 	vector    image.Point
 }
 
-func isJumpPoint(f floorPlan, p image.Point, dir image.Point) bool {
-	if !f.isFreeAt(p.Sub(dir)) {
+func isJumpPoint(g JPSGraph, p image.Point, dir image.Point) bool {
+	if g.IsBlock(p.Sub(dir)) {
 		return false
 	}
 	// forced neighbour
-	if f.isFreeAt(image.Pt(p.X+dir.Y, p.Y+dir.X)) && !f.isFreeAt(image.Pt(p.X+dir.Y, p.Y+dir.X).Sub(dir)) {
+	if !g.IsBlock(image.Pt(p.X+dir.Y, p.Y+dir.X)) && g.IsBlock(image.Pt(p.X+dir.Y, p.Y+dir.X).Sub(dir)) {
 		return true
 	}
-	if f.isFreeAt(image.Pt(p.X-dir.Y, p.Y-dir.X)) && !f.isFreeAt(image.Pt(p.X-dir.Y, p.Y-dir.X).Sub(dir)) {
+	if !g.IsBlock(image.Pt(p.X-dir.Y, p.Y-dir.X)) && g.IsBlock(image.Pt(p.X-dir.Y, p.Y-dir.X).Sub(dir)) {
 		return true
 	}
 	return false
 }
 
-type floorPlan []string
-
-func (f floorPlan) isFreeAt(p image.Point) bool {
-	return f.isInBounds(p) && f[p.Y][p.X] == ' '
-}
-
-func (f floorPlan) isInBounds(p image.Point) bool {
-	return (0 <= p.X && p.X < len(f[p.Y])) && (0 <= p.Y && p.Y < len(f))
-}
-
-func (f floorPlan) put(p image.Point, c rune) {
-	f[p.Y] = f[p.Y][:p.X] + string(c) + f[p.Y][p.X+1:]
-}
-
-func (f floorPlan) print() {
-	for _, row := range f {
-		fmt.Println(row)
-	}
+type JPSGraph interface {
+	image.Rect
+	IsBlock(n image.Point) bool
 }
 
 type jpGraph [][]uint8
 
-func newJumpPointGraph(f floorPlan) jpGraph {
+func newJumpPointGraph(g JPSGraph) jpGraph {
 	jpGraph := make([][]uint8, len(f))
-	for y := range f {
+	for y := range g {
 		jpGraph[y] = make([]uint8, len(f[y]))
 		for x := range f[y] {
 			if f[y][x] != ' ' {
