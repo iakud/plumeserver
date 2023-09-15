@@ -3,15 +3,21 @@ package jps
 import (
 	"fmt"
 	"image"
-
-	"golang.org/x/image/vector"
 )
 
-type node struct {
-	image.Point
-	originVal    uint8
-	jumpDistance [8]int
-}
+type DirectionIdx int
+
+const (
+	IdxUpLeft DirectionIdx = iota
+	IdxUp
+	IdxUpRight
+	IdxRight
+	IdxDownRight
+	IdxDown
+	IdxDownLeft
+	IdxLeft
+	IdxAll
+)
 
 const (
 	JPSPlusUp = 1 << iota
@@ -21,6 +27,17 @@ const (
 )
 
 var (
+	jumpDirections = [8]uint8{
+		JPSPlusUp | JPSPlusLeft,    // UpLeft
+		JPSPlusUp,                  // Up
+		JPSPlusUp | JPSPlusRight,   // UpRight
+		JPSPlusRight,               // Right
+		JPSPlusDown | JPSPlusRight, // DownRight
+		JPSPlusDown,                // Down
+		JPSPlusDown | JPSPlusLeft,  // DownLeft
+		JPSPlusLeft,                // Left
+	}
+
 	UpLeft    = image.Point{X: -1, Y: -1}
 	Up        = image.Point{X: 0, Y: -1}
 	UpRight   = image.Point{X: 1, Y: -1}
@@ -29,11 +46,34 @@ var (
 	Down      = image.Point{X: 0, Y: 1}
 	DownLeft  = image.Point{X: -1, Y: 1}
 	Left      = image.Point{X: -1, Y: 0}
+
+	directions = [8]image.Point{
+		UpLeft,    // UpLeft
+		Up,        // Up
+		UpRight,   // UpRight
+		Right,     // Right
+		DownRight, // DownRight
+		Down,      // Down
+		DownLeft,  // DownLeft
+		Left,      // Left
+	}
 )
 
+type node struct {
+	image.Point
+	originVal    uint8
+	jumpDistance [8]int
+}
+
 var (
-	jpsDirections = [4]uint8{JPSPlusDown, JPSPlusUp, JPSPlusRight, JPSPlusLeft}
-	jpsVectors    = [4]image.Point{Down, Up, Left, Right}
+	straightDir       = [4]DirectionIdx{IdxUp, IdxRight, IdxDown, IdxLeft}
+	leanDir           = [4]DirectionIdx{IdxUpLeft, IdxUpRight, IdxDownRight, IdxDownLeft}
+	leanToStraightDir = map[DirectionIdx][2]DirectionIdx{
+		IdxUpLeft:    {IdxLeft, IdxUp},
+		IdxUpRight:   {IdxUp, IdxRight},
+		IdxDownRight: {IdxRight, IdxDown},
+		IdxDownLeft:  {IdxDown, IdxLeft},
+	}
 )
 
 type JumpPointDefine struct {
@@ -53,13 +93,6 @@ func isJumpPoint(f floorPlan, p image.Point, dir image.Point) bool {
 		return true
 	}
 	return false
-}
-
-var JumpPointDir = [4]JumpPointDefine{
-	JumpPointDefine{direction: JPSPlusDown, vector: Down},
-	JumpPointDefine{direction: JPSPlusUp, vector: Up},
-	JumpPointDefine{direction: JPSPlusRight, vector: Left},
-	JumpPointDefine{direction: JPSPlusLeft, vector: Right},
 }
 
 type floorPlan []string
@@ -94,11 +127,12 @@ func newJumpPointGraph(f floorPlan) jpGraph {
 			}
 			p := image.Pt(x, y)
 			var direction uint8
-			for index, dir := range jpsVectors {
+			for _, directionIdx := range straightDir {
+				dir := directions[directionIdx]
 				if !isJumpPoint(f, p, dir) {
 					continue
 				}
-				direction |= jpsDirections[index]
+				direction |= jumpDirections[directionIdx]
 			}
 			jpGraph[y][x] = direction
 		}
@@ -116,7 +150,7 @@ func preCptJpMatrix(f floorPlan) *jpsplusGraph {
 	nodes := make([][]*node, len(f))
 	for y := range f {
 		nodes[y] = make([]*node, len(f[y]))
-		for x, _ := range f[y] {
+		for x := range f[y] {
 			p := image.Pt(x, y)
 			node := &node{Point: p}
 			// originVal:    v,
@@ -125,9 +159,63 @@ func preCptJpMatrix(f floorPlan) *jpsplusGraph {
 			nodes[y][x] = node
 		}
 	}
+
+	for y := range f {
+		for x := range f[y] {
+			p := image.Pt(x, y)
+			searchLeanDis(f, jpGraph, nodes, p)
+		}
+	}
+
 	return &jpsplusGraph{floorPlan: f, nodes: nil}
 }
 
 func searchStraightDis(f floorPlan, jpG jpGraph, p image.Point) [8]int {
+	jumpDistance := [8]int{}
+	if !f.isFreeAt(p) {
+		return jumpDistance
+	}
+	for _, directionIdx := range straightDir {
+		dir := directions[directionIdx]
+		var distance int = 0
+		for next := p.Add(dir); f.isFreeAt(next); next = next.Add(dir) {
+			distance--
+			if jpG[next.Y][next.X]&jumpDirections[directionIdx] != 0 {
+				distance = -distance
+				break
+			}
+		}
+		jumpDistance[directionIdx] = distance
+	}
+	return jumpDistance
+}
 
+func searchLeanDis(f floorPlan, jpG jpGraph, nodes [][]*node, p image.Point) {
+	if !f.isFreeAt(p) {
+		return
+	}
+	for _, directionIdx := range leanDir {
+		dir := directions[directionIdx]
+		// is near by block
+		if !f.isFreeAt(p.Add(image.Pt(dir.X, 0))) || !f.isFreeAt(p.Add(image.Pt(0, dir.Y))) {
+			continue
+		}
+		var distance int = 0
+		for next := p.Add(dir); f.isFreeAt(next); next = next.Add(dir) {
+			distance--
+			if jpG[next.Y][next.X]&jumpDirections[directionIdx] != 0 {
+				distance = -distance
+				break
+			}
+			if nodes[next.Y][next.X].jumpDistance[leanToStraightDir[directionIdx][0]] > 0 {
+				distance = -distance
+				break
+			}
+			if nodes[next.Y][next.X].jumpDistance[leanToStraightDir[directionIdx][1]] > 0 {
+				distance = -distance
+				break
+			}
+		}
+		nodes[p.Y][p.X].jumpDistance[directionIdx] = distance
+	}
 }
