@@ -84,17 +84,18 @@ func TestJump(t *testing.T) {
 
 	start := image.Pt(0, 0)
 	end := image.Pt(49, 49)
-	// jp := newJumpPointGraph(g)
+	jp := newJumpPointGraph(g)
 	graph := newJpsPlusGraph(g)
-
-	for y := 0; y < 50; y++ {
-		for x := 0; x < 50; x++ {
-			graph.nodes[start.Y][start.X].printDis()
-		}
-	}
 
 	path := FindPath(graph, start, end, distance, distance)
 	log.Println("path:", len(path))
+	for y := 0; y < 50; y++ {
+		for x := 0; x < 50; x++ {
+			if jp[y][x] > 0 {
+				g.put(image.Pt(x, y), 'X')
+			}
+		}
+	}
 	g.put(start, 'S')
 	g.put(end, 'E')
 	for _, p := range path {
