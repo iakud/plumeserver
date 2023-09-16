@@ -61,7 +61,10 @@ func FindPath(g *jpsPlusGraph, start, end image.Point, d, h CostFunc[image.Point
 			to := current.node.Add(dir.Mul(distance))
 			endDir := end.Sub(current.node)
 			// 方向平行
-			if endDir.Y*dir.X == endDir.X*dir.Y && current.node.X <= end.X && end.X <= to.X && current.node.Y <= end.Y && end.Y <= to.Y {
+			if endDir.Y*dir.X == endDir.X*dir.Y &&
+				(current.node.X < end.X && end.X <= to.X || to.X <= end.X && end.X < current.node.X) &&
+				(current.node.Y < end.Y && end.Y <= to.Y || to.Y <= end.Y && end.Y < current.node.Y) {
+				// 点在线上
 				to = end
 			}
 
