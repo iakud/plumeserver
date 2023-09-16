@@ -57,6 +57,15 @@ var (
 		DownLeft,  // DownLeft
 		Left,      // Left
 	}
+
+	straightDir       = [4]DirectionIdx{IdxUp, IdxRight, IdxDown, IdxLeft}
+	leanDir           = [4]DirectionIdx{IdxUpLeft, IdxUpRight, IdxDownRight, IdxDownLeft}
+	leanToStraightDir = map[DirectionIdx][2]DirectionIdx{
+		IdxUpLeft:    {IdxLeft, IdxUp},
+		IdxUpRight:   {IdxUp, IdxRight},
+		IdxDownRight: {IdxRight, IdxDown},
+		IdxDownLeft:  {IdxDown, IdxLeft},
+	}
 )
 
 type node struct {
@@ -70,17 +79,6 @@ func (n *node) printDis() {
 	log.Println(n.jumpDistance[IdxLeft], " ", n.jumpDistance[IdxRight])
 	log.Println(n.jumpDistance[IdxDownLeft], n.jumpDistance[IdxDown], n.jumpDistance[IdxDownRight])
 }
-
-var (
-	straightDir       = [4]DirectionIdx{IdxUp, IdxRight, IdxDown, IdxLeft}
-	leanDir           = [4]DirectionIdx{IdxUpLeft, IdxUpRight, IdxDownRight, IdxDownLeft}
-	leanToStraightDir = map[DirectionIdx][2]DirectionIdx{
-		IdxUpLeft:    {IdxLeft, IdxUp},
-		IdxUpRight:   {IdxUp, IdxRight},
-		IdxDownRight: {IdxRight, IdxDown},
-		IdxDownLeft:  {IdxDown, IdxLeft},
-	}
-)
 
 type JPSGraph interface {
 	Size() image.Point
