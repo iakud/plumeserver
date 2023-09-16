@@ -2,6 +2,7 @@ package jps
 
 import (
 	"container/heap"
+	"image"
 )
 
 var (
@@ -24,19 +25,19 @@ type Graph[Node any] interface {
 
 type CostFunc[Node any] func(a, b Node) float64
 
-func FindPath[Node comparable](g Graph[Node], start, end Node, d, h CostFunc[Node]) []Node {
-	closeList := make(map[Node]struct{})
-	openList := make(map[Node]*item[Node])
+func FindPath(g *jpsPlusGraph, start, end image.Point, d, h CostFunc[image.Point]) []image.Point {
+	closeList := make(map[image.Point]struct{})
+	openList := make(map[image.Point]*item[image.Point])
 
-	var pq priorityQueue[Node]
+	var pq priorityQueue[image.Point]
 	heap.Init(&pq)
 	// start
-	from := &item[Node]{node: start}
+	from := &item[image.Point]{node: start, direction: IdxAll}
 	openList[start] = from
 	heap.Push(&pq, from)
 
 	for pq.Len() > 0 {
-		current := heap.Pop(&pq).(*item[Node])
+		current := heap.Pop(&pq).(*item[image.Point])
 
 		if current.node == end {
 			// Path found
@@ -46,22 +47,39 @@ func FindPath[Node comparable](g Graph[Node], start, end Node, d, h CostFunc[Nod
 		delete(openList, current.node)
 		closeList[current.node] = struct{}{}
 
-		for _, neighbour := range g.Neighbours(current.node) {
-			if _, ok := closeList[neighbour]; ok {
+		jumpDistance := g.nodes[current.node.Y][current.node.X].jumpDistance
+
+		for _, direction := range directionMap[current.direction] {
+			distance := jumpDistance[direction]
+			if distance == 0 {
 				continue
 			}
-
-			cost := d(current.node, neighbour) + current.cost
-			next, ok := openList[neighbour]
+			var to image.Point
+			dir := directions[direction]
+			if distance < 0 {
+				to = current.node.Sub(dir.Mul(distance))
+				if isOnWay(current.node, to, end) {
+					to = end
+				}
+			} else {
+				to = current.node.Add(dir.Mul(distance))
+				if isOnWay(current.node, to, end) {
+					to = end
+				}
+			}
+			// open
+			cost := d(current.node, to) + current.cost
+			next, ok := openList[to]
 			if !ok {
 				// add
-				next = &item[Node]{
-					node:     neighbour,
-					from:     current,
-					cost:     cost,
-					priority: cost + h(neighbour, end),
+				next = &item[image.Point]{
+					node:      to,
+					from:      current,
+					direction: direction,
+					cost:      cost,
+					priority:  cost + h(to, end),
 				}
-				openList[neighbour] = next
+				openList[to] = next
 				heap.Push(&pq, next)
 				continue
 			}
@@ -70,8 +88,9 @@ func FindPath[Node comparable](g Graph[Node], start, end Node, d, h CostFunc[Nod
 				continue
 			}
 			next.from = current
+			next.direction = direction
 			next.cost = cost
-			next.priority = cost + h(neighbour, end)
+			next.priority = cost + h(to, end)
 			heap.Fix(&pq, next.index)
 		}
 	}
@@ -89,4 +108,27 @@ func paths[Node any](current *item[Node]) []Node {
 		nodes[i], nodes[j] = nodes[j], nodes[i]
 	}
 	return nodes
+}
+
+func isOnWay(curr, to, goal image.Point) bool {
+	if to == goal {
+		return true
+	}
+	if to.X-goal.X == 0 {
+		if goal.X-curr.X == 0 {
+			return isBetween(curr.Y, goal.Y, to.Y)
+		}
+		return false
+	}
+	if goal.X-curr.X == 0 {
+		return false
+	}
+	if float64(to.Y-goal.Y)/float64(to.X-goal.X) == float64(goal.Y-curr.Y)/float64(goal.X-curr.X) {
+		return isBetween(curr.Y, goal.Y, to.Y) && isBetween(curr.X, goal.X, to.X)
+	}
+	return false
+}
+
+func isBetween(a, b, c int) bool {
+	return (a >= b && b >= c) || (a <= b && b <= c)
 }

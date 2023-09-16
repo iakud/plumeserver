@@ -1,8 +1,8 @@
 package jps
 
 import (
-	"fmt"
 	"image"
+	"log"
 )
 
 type DirectionIdx int
@@ -65,6 +65,12 @@ type node struct {
 	jumpDistance [8]int
 }
 
+func (n *node) printDis() {
+	log.Println(n.jumpDistance[IdxUpLeft], n.jumpDistance[IdxUp], n.jumpDistance[IdxUpRight])
+	log.Println(n.jumpDistance[IdxLeft], " ", n.jumpDistance[IdxRight])
+	log.Println(n.jumpDistance[IdxDownLeft], n.jumpDistance[IdxDown], n.jumpDistance[IdxDownRight])
+}
+
 var (
 	straightDir       = [4]DirectionIdx{IdxUp, IdxRight, IdxDown, IdxLeft}
 	leanDir           = [4]DirectionIdx{IdxUpLeft, IdxUpRight, IdxDownRight, IdxDownLeft}
@@ -76,9 +82,35 @@ var (
 	}
 )
 
-type JumpPointDefine struct {
-	direction uint8
-	vector    image.Point
+type JPSGraph interface {
+	Size() image.Point
+	IsBlock(n image.Point) bool
+}
+
+type jpGraph [][]uint8
+
+func newJumpPointGraph(g JPSGraph) jpGraph {
+	size := g.Size()
+	jpGraph := make([][]uint8, size.Y)
+	for y := 0; y < size.Y; y++ {
+		jpGraph[y] = make([]uint8, size.X)
+		for x := 0; x < size.X; x++ {
+			p := image.Pt(x, y)
+			if g.IsBlock(p) {
+				continue
+			}
+			var direction uint8
+			for _, directionIdx := range straightDir {
+				dir := directions[directionIdx]
+				if !isJumpPoint(g, p, dir) {
+					continue
+				}
+				direction |= jumpDirections[directionIdx]
+			}
+			jpGraph[y][x] = direction
+		}
+	}
+	return jpGraph
 }
 
 func isJumpPoint(g JPSGraph, p image.Point, dir image.Point) bool {
@@ -95,75 +127,45 @@ func isJumpPoint(g JPSGraph, p image.Point, dir image.Point) bool {
 	return false
 }
 
-type JPSGraph interface {
-	image.Rect
-	IsBlock(n image.Point) bool
-}
-
-type jpGraph [][]uint8
-
-func newJumpPointGraph(g JPSGraph) jpGraph {
-	jpGraph := make([][]uint8, len(f))
-	for y := range g {
-		jpGraph[y] = make([]uint8, len(f[y]))
-		for x := range f[y] {
-			if f[y][x] != ' ' {
-				continue
-			}
-			p := image.Pt(x, y)
-			var direction uint8
-			for _, directionIdx := range straightDir {
-				dir := directions[directionIdx]
-				if !isJumpPoint(f, p, dir) {
-					continue
-				}
-				direction |= jumpDirections[directionIdx]
-			}
-			jpGraph[y][x] = direction
-		}
-	}
-	return jpGraph
-}
-
-type jpsplusGraph struct {
-	floorPlan
+type jpsPlusGraph struct {
 	nodes [][]*node
 }
 
-func preCptJpMatrix(f floorPlan) *jpsplusGraph {
-	jpGraph := newJumpPointGraph(f)
-	nodes := make([][]*node, len(f))
-	for y := range f {
-		nodes[y] = make([]*node, len(f[y]))
-		for x := range f[y] {
+func newJpsPlusGraph(g JPSGraph) *jpsPlusGraph {
+	size := g.Size()
+	jpGraph := newJumpPointGraph(g)
+	nodes := make([][]*node, size.Y)
+	for y := 0; y < size.Y; y++ {
+		nodes[y] = make([]*node, size.X)
+		for x := 0; x < size.X; x++ {
 			p := image.Pt(x, y)
 			node := &node{Point: p}
 			// originVal:    v,
 			// 对每个节点进行跳点的直线可达性判断，并记录好跳点直线直线距离
-			node.jumpDistance = searchStraightDis(f, jpGraph, p)
+			node.jumpDistance = searchStraightDis(g, jpGraph, p)
 			nodes[y][x] = node
 		}
 	}
 
-	for y := range f {
-		for x := range f[y] {
+	for y := 0; y < size.Y; y++ {
+		for x := 0; x < size.X; x++ {
 			p := image.Pt(x, y)
-			searchLeanDis(f, jpGraph, nodes, p)
+			searchLeanDis(g, jpGraph, nodes, p)
 		}
 	}
 
-	return &jpsplusGraph{floorPlan: f, nodes: nil}
+	return &jpsPlusGraph{nodes: nodes}
 }
 
-func searchStraightDis(f floorPlan, jpG jpGraph, p image.Point) [8]int {
+func searchStraightDis(g JPSGraph, jpG jpGraph, p image.Point) [8]int {
 	jumpDistance := [8]int{}
-	if !f.isFreeAt(p) {
+	if g.IsBlock(p) {
 		return jumpDistance
 	}
 	for _, directionIdx := range straightDir {
 		dir := directions[directionIdx]
 		var distance int = 0
-		for next := p.Add(dir); f.isFreeAt(next); next = next.Add(dir) {
+		for next := p.Add(dir); !g.IsBlock(next); next = next.Add(dir) {
 			distance--
 			if jpG[next.Y][next.X]&jumpDirections[directionIdx] != 0 {
 				distance = -distance
@@ -175,18 +177,18 @@ func searchStraightDis(f floorPlan, jpG jpGraph, p image.Point) [8]int {
 	return jumpDistance
 }
 
-func searchLeanDis(f floorPlan, jpG jpGraph, nodes [][]*node, p image.Point) {
-	if !f.isFreeAt(p) {
+func searchLeanDis(g JPSGraph, jpG jpGraph, nodes [][]*node, p image.Point) {
+	if g.IsBlock(p) {
 		return
 	}
 	for _, directionIdx := range leanDir {
 		dir := directions[directionIdx]
 		// is near by block
-		if !f.isFreeAt(p.Add(image.Pt(dir.X, 0))) || !f.isFreeAt(p.Add(image.Pt(0, dir.Y))) {
+		if g.IsBlock(p.Add(image.Pt(dir.X, 0))) || g.IsBlock(p.Add(image.Pt(0, dir.Y))) {
 			continue
 		}
 		var distance int = 0
-		for next := p.Add(dir); f.isFreeAt(next); next = next.Add(dir) {
+		for next := p.Add(dir); !g.IsBlock(next); next = next.Add(dir) {
 			distance--
 			if jpG[next.Y][next.X]&jumpDirections[directionIdx] != 0 {
 				distance = -distance
