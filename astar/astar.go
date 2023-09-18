@@ -5,7 +5,7 @@ import (
 )
 
 type Graph[Node any] interface {
-	Neighbours(n Node) []Node
+	Neighbors(n Node) []Node
 }
 
 type CostFunc[Node any] func(a, b Node) float64
@@ -35,23 +35,23 @@ func FindPath[Node comparable](g Graph[Node], start, goal Node, d, h CostFunc[No
 		delete(openList, currentNode.node)
 		closeList[currentNode.node] = struct{}{}
 
-		for _, neighbour := range g.Neighbours(currentNode.node) {
-			if _, ok := closeList[neighbour]; ok {
+		for _, neighbor := range g.Neighbors(currentNode.node) {
+			if _, ok := closeList[neighbor]; ok {
 				continue
 			}
 
-			cost := d(currentNode.node, neighbour) + currentNode.gScore
-			neighbourNode, ok := openList[neighbour]
+			cost := d(currentNode.node, neighbor) + currentNode.gScore
+			neighbourNode, ok := openList[neighbor]
 			if !ok {
 				// add
 				neighbourNode = &item[Node]{
-					node:   neighbour,
+					node:   neighbor,
 					gScore: cost,
-					fScore: cost + h(neighbour, goal),
+					fScore: cost + h(neighbor, goal),
 				}
-				cameFrom[neighbour] = currentNode.node
+				cameFrom[neighbor] = currentNode.node
 				heap.Push(&pq, neighbourNode)
-				openList[neighbour] = neighbourNode
+				openList[neighbor] = neighbourNode
 				continue
 			}
 			// update
@@ -59,9 +59,9 @@ func FindPath[Node comparable](g Graph[Node], start, goal Node, d, h CostFunc[No
 				continue
 			}
 			neighbourNode.gScore = cost
-			neighbourNode.fScore = cost + h(neighbour, goal)
+			neighbourNode.fScore = cost + h(neighbor, goal)
 			heap.Fix(&pq, neighbourNode.index)
-			cameFrom[neighbour] = currentNode.node
+			cameFrom[neighbor] = currentNode.node
 		}
 	}
 	// No path found
