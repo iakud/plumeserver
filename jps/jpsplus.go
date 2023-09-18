@@ -129,6 +129,62 @@ type jpsPlusGraph struct {
 	nodes [][]*node
 }
 
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
+}
+
+var (
+	dirMap = map[image.Point][]DirectionIdx{
+		Down:      {IdxLeft, IdxDownLeft, IdxDown, IdxDownRight, IdxRight},
+		Left:      {IdxLeft, IdxDownLeft, IdxDown, IdxUpLeft, IdxUp},
+		Right:     {IdxRight, IdxDownRight, IdxDown, IdxUpRight, IdxUp},
+		Up:        {IdxLeft, IdxUpLeft, IdxUp, IdxUpRight, IdxRight},
+		UpRight:   {IdxUpRight, IdxUp, IdxRight},
+		DownRight: {IdxRight, IdxDownRight, IdxDown},
+		DownLeft:  {IdxLeft, IdxDownLeft, IdxDown},
+		UpLeft:    {IdxLeft, IdxUpLeft, IdxUp},
+		image.ZP:  {IdxUp, IdxDown, IdxLeft, IdxRight, IdxUpLeft, IdxUpRight, IdxDownLeft, IdxDownRight},
+	}
+)
+
+func (g *jpsPlusGraph) Neighbors(n, from, goal image.Point) []image.Point {
+	jumpNodes := make([]image.Point, 0)
+	jumpDistance := g.nodes[n.Y][n.X].jumpDistance
+	dir := image.Pt((n.X-from.X)/max(abs(n.X-from.X), 1), (n.Y-from.Y)/max(abs(n.Y-from.Y), 1))
+	for _, direction := range dirMap[dir] {
+		distance := jumpDistance[direction]
+		if distance == 0 {
+			continue
+		}
+		dir := directions[direction]
+		if distance < 0 {
+			distance = -distance
+		}
+		to := n.Add(dir.Mul(distance))
+		endDir := goal.Sub(n)
+		// 方向平行
+		if endDir.Y*dir.X == endDir.X*dir.Y &&
+			(n.X < goal.X && goal.X <= to.X || to.X <= goal.X && goal.X < n.X) &&
+			(n.Y < goal.Y && goal.Y <= to.Y || to.Y <= goal.Y && goal.Y < n.Y) {
+			// 点在线上
+			jumpNodes = append(jumpNodes, goal)
+		} else {
+			jumpNodes = append(jumpNodes, to)
+		}
+	}
+	return jumpNodes
+}
+
 func newJpsPlusGraph(g JPSGraph) *jpsPlusGraph {
 	size := g.Size()
 	jpGraph := newJumpPointGraph(g)

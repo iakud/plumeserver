@@ -6,6 +6,8 @@ import (
 	"log"
 	"math"
 	"testing"
+
+	"github.com/iakud/plumeserver/astar"
 )
 
 type graph []string
@@ -83,11 +85,13 @@ func TestJump(t *testing.T) {
 	}
 
 	start := image.Pt(0, 0)
-	end := image.Pt(49, 49)
+	goal := image.Pt(49, 49)
 	jp := newJumpPointGraph(g)
 	graph := newJpsPlusGraph(g)
 
-	path := FindPath(graph, start, end, distance, distance)
+	path := astar.FindPath(graph, start, goal, distance, distance)
+
+	// path := FindPath(graph, start, goal, distance, distance)
 	log.Println("path:", len(path))
 	for y := 0; y < 50; y++ {
 		for x := 0; x < 50; x++ {
@@ -97,7 +101,7 @@ func TestJump(t *testing.T) {
 		}
 	}
 	g.put(start, 'S')
-	g.put(end, 'E')
+	g.put(goal, 'E')
 	for _, p := range path {
 		g.put(p, 'o')
 	}
