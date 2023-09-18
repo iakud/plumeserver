@@ -4,8 +4,8 @@ import (
 	"container/heap"
 )
 
-type Graph[fScore any] interface {
-	Neighbours(n fScore) []fScore
+type Graph[Node any] interface {
+	Neighbours(n Node) []Node
 }
 
 type CostFunc[Node any] func(a, b Node) float64
