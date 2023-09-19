@@ -1,4 +1,4 @@
-package jps
+package jpsplus
 
 import (
 	"fmt"
@@ -10,28 +10,36 @@ import (
 	"github.com/iakud/plumeserver/astar"
 )
 
-type graph []string
+type grid []string
 
-func (g graph) IsBlock(p image.Point) bool {
-	return p.Y < 0 || p.Y >= len(g) || p.X < 0 || p.X >= len(g[p.Y]) || g[p.Y][p.X] != ' '
+func (g grid) IsFreeAt(p image.Point) bool {
+	return !g.IsOutsideAt(p) && !g.IsObstacleAt(p)
 }
 
-func (g graph) Size() image.Point {
+func (g grid) IsOutsideAt(p image.Point) bool {
+	return p.Y < 0 || p.Y >= len(g) || p.X < 0 || p.X >= len(g[p.Y])
+}
+
+func (g grid) IsObstacleAt(p image.Point) bool {
+	return g[p.Y][p.X] != ' '
+}
+
+func (g grid) Size() image.Point {
 	return image.Pt(len(g), len(g[0]))
 }
 
-func (g graph) put(p image.Point, c rune) {
+func (g grid) put(p image.Point, c rune) {
 	g[p.Y] = g[p.Y][:p.X] + string(c) + g[p.Y][p.X+1:]
 }
 
-func (g graph) print() {
+func (g grid) print() {
 	for _, y := range g {
 		fmt.Println(y)
 	}
 }
 
 func TestJump(t *testing.T) {
-	var g = graph{
+	var g = grid{
 		" ##                         ##                    ",
 		"                            ##                    ",
 		"       ###         ##       ##                    ",
@@ -86,24 +94,13 @@ func TestJump(t *testing.T) {
 
 	start := image.Pt(0, 0)
 	goal := image.Pt(49, 49)
-	jp := newJumpPointGraph(g)
-	graph := newJpsPlusGraph(g)
+	graph := NewGraph(g)
 
 	path := astar.FindPath(graph, start, goal, distance, distance)
-
-	// path := FindPath(graph, start, goal, distance, distance)
 	log.Println("path:", len(path))
-	for y := 0; y < 50; y++ {
-		for x := 0; x < 50; x++ {
-			if jp[y][x] > 0 {
-				g.put(image.Pt(x, y), 'X')
-			}
-		}
-	}
-	g.put(start, 'S')
-	g.put(goal, 'E')
+
 	for _, p := range path {
-		g.put(p, 'o')
+		g.put(p, '.')
 	}
 	g.print()
 }
