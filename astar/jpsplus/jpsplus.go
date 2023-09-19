@@ -4,17 +4,17 @@ import (
 	"image"
 )
 
-type directionIndex int
+type direction int
 
 const (
-	indexUpLeft directionIndex = iota
-	indexUp
-	indexUpRight
-	indexLeft
-	indexRight
-	indexDownRight
-	indexDown
-	indexDownLeft
+	kUpLeft direction = iota
+	kUp
+	kUpRight
+	kLeft
+	kRight
+	kDownRight
+	kDown
+	kDownLeft
 )
 
 const (
@@ -45,26 +45,26 @@ var (
 
 	// directions
 	directions = []image.Point{
-		indexUpLeft: dirUpLeft, indexUp: dirUp, indexUpRight: dirUpRight, // UpLeft, Up, UpRight
-		indexLeft: dirLeft, indexRight: dirRight, // Left, Right
-		indexDownLeft: dirDownLeft, indexDown: dirDown, indexDownRight: dirDownRight, // DownLeft, Down, DownRight
+		kUpLeft: dirUpLeft, kUp: dirUp, kUpRight: dirUpRight, // UpLeft, Up, UpRight
+		kLeft: dirLeft, kRight: dirRight, // Left, Right
+		kDownLeft: dirDownLeft, kDown: dirDown, kDownRight: dirDownRight, // DownLeft, Down, DownRight
 	}
 
 	// straight & diagonal
-	straightDirectionIndexes = []directionIndex{indexUp, indexRight, indexDown, indexLeft}
-	diagonalDirectionIndexes = []directionIndex{indexUpLeft, indexUpRight, indexDownRight, indexDownLeft}
+	straightDirectionIndexes = []direction{kUp, kRight, kDown, kLeft}
+	diagonalDirectionIndexes = []direction{kUpLeft, kUpRight, kDownRight, kDownLeft}
 
-	diagonalToStraightDirectionIndexes = [][]directionIndex{
-		{indexUp, indexLeft},
-		{indexUp, indexRight},
-		{indexDown, indexRight},
-		{indexDown, indexLeft},
+	diagonalToStraightDirection = map[direction][]direction{
+		kUpLeft: {kUp, kLeft},
+		kUpRight: {kUp, kRight},
+		kDownRight :{kDown, kRight},
+		kDownLeft: {kDown, kLeft},
 	}
 
 	jumpDirections = [8]uint8{
-		indexUpLeft: jumpUpLeft, indexUp: jumpUp, indexUpRight: jumpUpRight,
-		indexLeft: jumpLeft, indexRight: jumpRight,
-		indexDownLeft: jumpDownLeft, indexDown: jumpDown, indexDownRight: jumpDownRight,
+		kUpLeft: jumpUpLeft, kUp: jumpUp, kUpRight: jumpUpRight, // UpLeft, Up, UpRight
+		kLeft: jumpLeft, kRight: jumpRight, // Left, Right
+		kDownLeft: jumpDownLeft, kDown: jumpDown, kDownRight: jumpDownRight, // DownLeft, Down, DownRight
 	}
 )
 
@@ -118,17 +118,17 @@ func isJumpPoint(g Grid, p image.Point, d image.Point) bool {
 }
 
 var (
-	directionMap = map[image.Point][]directionIndex{
-		dirUpLeft:    {indexLeft, indexUpLeft, indexUp},
-		dirUp:        {indexLeft, indexUpLeft, indexUp, indexUpRight, indexRight},
-		dirUpRight:   {indexUp, indexUpRight, indexRight},
-		dirRight:     {indexUp, indexUpRight, indexRight, indexDownRight, indexDown},
-		dirDownRight: {indexRight, indexDownRight, indexDown},
-		dirDown:      {indexRight, indexDownRight, indexDown, indexDownLeft, indexLeft},
-		dirDownLeft:  {indexDown, indexDownLeft, indexLeft},
-		dirLeft:      {indexDown, indexDownLeft, indexLeft, indexUpLeft, indexUp},
+	directionMap = map[image.Point][]direction{
+		dirUpLeft:    {kLeft, kUpLeft, kUp},
+		dirUp:        {kLeft, kUpLeft, kUp, kUpRight, kRight},
+		dirUpRight:   {kUp, kUpRight, kRight},
+		dirRight:     {kUp, kUpRight, kRight, kDownRight, kDown},
+		dirDownRight: {kRight, kDownRight, kDown},
+		dirDown:      {kRight, kDownRight, kDown, kDownLeft, kLeft},
+		dirDownLeft:  {kDown, kDownLeft, kLeft},
+		dirLeft:      {kDown, kDownLeft, kLeft, kUpLeft, kUp},
 
-		image.ZP: {indexUpLeft, indexUp, indexUpRight, indexRight, indexDownRight, indexDown, indexDownLeft, indexLeft},
+		image.ZP: {kUpLeft, kUp, kUpRight, kRight, kDownRight, kDown, kDownLeft, kLeft},
 	}
 )
 
@@ -177,69 +177,64 @@ func NewGraph(g Grid) *graph {
 	// straight
 	for y := 0; y < size.Y; y++ {
 		for x := 0; x < size.X; x++ {
-			nodes[y][x].jumpDistance = straightDirectionDistance(g, jg, image.Pt(x, y))
+			p := image.Pt(x, y)
+			if !g.IsFreeAt(p) {
+				continue
+			}
+			for _, directionIndex := range straightDirectionIndexes {
+				nodes[y][x].jumpDistance[directionIndex] = straightDistance(g, jg, p, directionIndex)
+			}
 		}
 	}
 	// diagonal
 	for y := 0; y < size.Y; y++ {
 		for x := 0; x < size.X; x++ {
-			diagonalDirectionDistance(g, jg, nodes, image.Pt(x, y))
+			p := image.Pt(x, y)
+			if !g.IsFreeAt(p) {
+				continue
+			}
+			for _, directionIndex := range diagonalDirectionIndexes {
+				nodes[p.Y][p.X].jumpDistance[directionIndex] = diagonalDistance(g, jg, p, directionIndex, nodes)
+			}
 		}
 	}
 	return &graph{nodes: nodes}
 }
 
-func straightDirectionDistance(g Grid, jg jumpGrid, p image.Point) [8]int {
-	jumpDistance := [8]int{}
-	if !g.IsFreeAt(p) {
-		return jumpDistance
-	}
-	for _, directionIndex := range straightDirectionIndexes {
-		dir := directions[directionIndex]
-		var distance int = 0
-		for next := p.Add(dir); g.IsFreeAt(next); next = next.Add(dir) {
-			distance--
-			if jg[next.Y][next.X]&jumpDirections[directionIndex] != 0 {
-				distance = -distance
-				break
-			}
+func straightDistance(g Grid, jg jumpGrid, p image.Point, directionIndex direction) int {
+	d := directions[directionIndex]
+	jump := jumpDirections[directionIndex]
+	var distance int = 0
+	for n := p.Add(d); g.IsFreeAt(n); n = n.Add(d) {
+		distance++
+		if jg[n.Y][n.X]&jump != 0 {
+			return distance
 		}
-		jumpDistance[directionIndex] = distance
 	}
-	return jumpDistance
+	return -distance
 }
 
-func diagonalDirectionDistance(g Grid, jg jumpGrid, nodes [][]*node, p image.Point) {
-	if !g.IsFreeAt(p) {
-		return
+func diagonalDistance(g Grid, jg jumpGrid, p image.Point, directionIndex direction, nodes [][]*node) int {
+	d := directions[directionIndex]
+	jump := jumpDirections[directionIndex]
+
+	// is near by block
+	if !g.IsFreeAt(p.Add(image.Pt(d.X, 0))) || !g.IsFreeAt(p.Add(image.Pt(0, d.Y))) {
+		return 0
 	}
-	for i, directionIndex := range diagonalDirectionIndexes {
-		dir := directions[directionIndex]
-		// is near by block
-		if !g.IsFreeAt(p.Add(image.Pt(dir.X, 0))) || !g.IsFreeAt(p.Add(image.Pt(0, dir.Y))) {
-			continue
+	var distance int = 0
+	for n := p.Add(d); g.IsFreeAt(n); n = n.Add(d) {
+		distance++
+		if jg[n.Y][n.X]&jump != 0 {
+			return distance
 		}
-		var distance int = 0
-		for next := p.Add(dir); g.IsFreeAt(next); next = next.Add(dir) {
-			distance--
-			if jg[next.Y][next.X]&jumpDirections[directionIndex] != 0 {
-				distance = -distance
-				break
-			}
-			var found bool
-			for _, straightDirectionIndex := range diagonalToStraightDirectionIndexes[i] {
-				if nodes[next.Y][next.X].jumpDistance[straightDirectionIndex] > 0 {
-					found = true
-					break
-				}
-			}
-			if found {
-				distance = -distance
-				break
+		for _, straightDirectionIndex := range diagonalToStraightDirection[directionIndex] {
+			if nodes[n.Y][n.X].jumpDistance[straightDirectionIndex] > 0 {
+				return distance
 			}
 		}
-		nodes[p.Y][p.X].jumpDistance[directionIndex] = distance
 	}
+	return -distance
 }
 
 func abs(x int) int {
