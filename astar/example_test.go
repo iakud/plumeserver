@@ -64,7 +64,7 @@ func (g graph[Node]) link(a, b Node) graph[Node] {
 	return g
 }
 
-func (g graph[Node]) Neighbors(n, from, goal Node) []Node {
+func (g graph[Node]) Neighbors(n, p, goal Node) []Node {
 	return g[n]
 }
 
@@ -121,7 +121,7 @@ func distance(p, q image.Point) float64 {
 
 type floorPlan []string
 
-func (f floorPlan) Neighbors(p, from, goal image.Point) []image.Point {
+func (f floorPlan) Neighbors(n, p, goal image.Point) []image.Point {
 	offsets := []image.Point{
 		image.Pt(0, -1), // North
 		image.Pt(1, 0),  // East
@@ -130,7 +130,7 @@ func (f floorPlan) Neighbors(p, from, goal image.Point) []image.Point {
 	}
 	res := make([]image.Point, 0, 4)
 	for _, off := range offsets {
-		q := p.Add(off)
+		q := n.Add(off)
 		if f.isFreeAt(q) {
 			res = append(res, q)
 		}

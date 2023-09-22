@@ -5,7 +5,7 @@ import (
 )
 
 type Graph[Node any] interface {
-	Neighbors(n, from, goal Node) []Node
+	Neighbors(n, p, goal Node) []Node
 }
 
 type CostFunc[Node any] func(a, b Node) float64

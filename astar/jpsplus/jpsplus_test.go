@@ -24,10 +24,6 @@ func (g grid) IsObstacleAt(p image.Point) bool {
 	return g[p.Y][p.X] != ' '
 }
 
-func (g grid) Size() image.Point {
-	return image.Pt(len(g), len(g[0]))
-}
-
 func (g grid) put(p image.Point, c rune) {
 	g[p.Y] = g[p.Y][:p.X] + string(c) + g[p.Y][p.X+1:]
 }
@@ -94,7 +90,7 @@ func TestJump(t *testing.T) {
 
 	start := image.Pt(0, 0)
 	goal := image.Pt(49, 49)
-	graph := NewGraph(g)
+	graph := NewGraph(g, image.Pt(len(g), len(g[0])))
 
 	path := astar.FindPath(graph, start, goal, distance, distance)
 	log.Println("path:", len(path))
