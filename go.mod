@@ -7,4 +7,4 @@ require (
 	github.com/iakud/plume v0.0.0-20210823130714-646882ed5afd
 )
 
-require google.golang.org/protobuf v1.27.1 // indirect
+require google.golang.org/protobuf v1.33.0 // indirect
